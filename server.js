@@ -20,17 +20,12 @@ let reqListener = (req, res) => {
     let filePath = `./Notes/${category.toLowerCase()}/${title}.txt`;
     if (!fs.existsSync(categoryDir)) {
       fs.mkdirSync(categoryDir);
-      fs.writeFile(filePath, note, err => {
-        if (err) console.log(err);
-        console.log(
-          `File created with name: ${title.toLowerCase()} and content: ${note} `
-        );
-      });
     }
     fs.writeFile(filePath, note, err => {
       if (err) console.log(err);
-      console.log(
-        `File created with name: ${title.toLowerCase()}.txt and content: ${note} `
+      res.writeHead(200, { "Content-Type": "text/html" });
+      res.end(
+        `File created with <br>name:<b> ${title.toLowerCase()}.txt</b></br>content:<b> ${note}</b>  `
       );
     });
   });
