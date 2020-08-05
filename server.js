@@ -45,6 +45,25 @@ let reqListener = (req, res) => {
       if (err) console.error(err);
       res.end(contents);
     });
+  } else if (req.method == "PUT") {
+    let path = url.parse(req.url);
+    let pathname = `./Notes${path.pathname}`;
+    let body = "";
+    req.on("data", chunk => {
+      body += chunk;
+    });
+    req.on("end", () => {
+      let { note } = parse(body);
+      fs.readFile(pathname, (err, contents) => {
+        if (err) console.error(err);
+        let content = `${contents} <br> ${note}`;
+        fs.writeFile(pathname, content, err => {
+          if (err) console.error(err);
+          res.writeHead(200, { "Content-Type": "text/html" });
+          res.end(content);
+        });
+      });
+    });
   }
 };
 let server = http.createServer(reqListener); // create server
