@@ -56,7 +56,7 @@ let reqListener = (req, res) => {
       let { note } = parse(body);
       fs.readFile(pathname, (err, contents) => {
         if (err) console.error(err);
-        let content = `${contents} <br> ${note}`;
+        let content = `${contents} <br>${note}`;
         fs.writeFile(pathname, content, err => {
           if (err) console.error(err);
           res.writeHead(200, { "Content-Type": "text/html" });
@@ -64,8 +64,27 @@ let reqListener = (req, res) => {
         });
       });
     });
+  } else if (req.method == "DELETE") {
+    let path = url.parse(req.url);
+    let pathname = `./Notes${path.pathname}`;
+    let pathArr = pathname.split("/");
+    let categoryPath = `./Notes/${pathArr[2]}`;
+
+    fs.unlink(pathname, err => {
+      if (err) console.error(err);
+      fs.readdir(categoryPath, (err, files) => {
+        if (files.length == 0) {
+          fs.rmdir(categoryPath, err => {
+            if (err) console.log(err);
+          });
+        }
+        res.writeHead(200, { "Content-Type": "text/html" });
+        res.end(`${pathArr[3]} successful deleted`);
+      });
+    });
   }
 };
+
 let server = http.createServer(reqListener); // create server
 
 server.listen(port, "localhost", () => {
