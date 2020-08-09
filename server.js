@@ -1,7 +1,11 @@
 const http = require("http");
+const path = require("path");
 const url = require("url");
 const { parse } = require("querystring");
 const fs = require("fs");
+const readline = require("readline");
+const static = require("node-static")
+let fileServer = new static.Server("./error")
 
 let port = 3002;
 
@@ -37,6 +41,43 @@ let reqListener = (req, res) => {
           `File created with <br>name:<b> ${title.toLowerCase()}.txt</b></br>content:<b> ${note}</b>  `
         ); // send the string back to the client.
       });
+    });
+  } else if (req.method == "GET" && req.url == "/summary") {
+    fs.readdir("./Notes", (err, folders) => {
+      let data = [];
+      if (err) {
+        console.log(err);
+      } else {
+        let notes = {};
+        folders.forEach(folder => {
+          let folderPath = path.join(__dirname, "Notes", folder);
+          notes.folder = folder;
+
+          fs.readdir(folderPath, (err, files) => {
+            if (err) {
+              console.log(err);
+            } else {
+              files.forEach(file => {
+                let filepath = path.join(__dirname, "Notes", folder, file);
+                notes.file = file;
+                let lines = [];
+                let rl = readline.createInterface({
+                  input: fs.createReadStream(filepath)
+                });
+                rl.on("line", line => {
+                  lines.push(line);
+                });
+                rl.on("close", () => {
+                  lines.splice(2).join(",");
+                  notes.summary = lines;
+                });
+              });
+            }
+          });
+          data.push(notes);
+        });
+        res.end(JSON.stringify({ data }));
+      }
     });
   } else if (req.method == "GET") {
     let path = url.parse(req.url, true);
@@ -82,6 +123,10 @@ let reqListener = (req, res) => {
         res.end(`${pathArr[3]} successful deleted`);
       });
     });
+  }else{
+    fileServer.serve(req, res, (e,response)=>{
+      fileServer.serveFile("/404.html",404,{},req,res)
+    })
   }
 };
 
@@ -89,4 +134,4 @@ let server = http.createServer(reqListener); // create server
 
 server.listen(port, "localhost", () => {
   console.log(`Server running on port: ${port}`);
-});
+}); // let server listen on specified port of localhost
