@@ -4,8 +4,8 @@ const url = require("url");
 const { parse } = require("querystring");
 const fs = require("fs");
 const readline = require("readline");
-const static = require("node-static")
-let fileServer = new static.Server("./error")
+const static = require("node-static");
+let fileServer = new static.Server("./error");
 
 let port = 3002;
 
@@ -79,14 +79,20 @@ let reqListener = (req, res) => {
         res.end(JSON.stringify({ data }));
       }
     });
-  } else if (req.method == "GET") {
+  } else if (req.method == "GET" && url.parse(req.url, true).pathname != "") {
+    console.log(req.url);
     let path = url.parse(req.url, true);
     let filePath = `./Notes${path.pathname}`;
     fs.readFile(filePath, (err, contents) => {
-      if (err) console.error(err);
-      res.end(contents);
+      if (err) {
+        fileServer.serve(req, res, (e, response) => {
+          fileServer.serveFile("/404.html", 404, {}, req, res);
+        });
+      } else {
+        res.end(contents);
+      }
     });
-  } else if (req.method == "PUT") {
+  } else if (req.method == "PUT" && url.parse(req.url, true).pathname != "") {
     let path = url.parse(req.url);
     let pathname = `./Notes${path.pathname}`;
     let body = "";
@@ -105,7 +111,10 @@ let reqListener = (req, res) => {
         });
       });
     });
-  } else if (req.method == "DELETE") {
+  } else if (
+    req.method == "DELETE" &&
+    url.parse(req.url, true).pathname != ""
+  ) {
     let path = url.parse(req.url);
     let pathname = `./Notes${path.pathname}`;
     let pathArr = pathname.split("/");
@@ -123,10 +132,10 @@ let reqListener = (req, res) => {
         res.end(`${pathArr[3]} successful deleted`);
       });
     });
-  }else{
-    fileServer.serve(req, res, (e,response)=>{
-      fileServer.serveFile("/404.html",404,{},req,res)
-    })
+  } else {
+    fileServer.serve(req, res, (e, response) => {
+      fileServer.serveFile("/404.html", 404, {}, req, res);
+    });
   }
 };
 
